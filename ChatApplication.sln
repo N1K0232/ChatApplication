@@ -8,19 +8,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication", "src\ChatApplication\ChatApplication.csproj", "{341E2060-8DC6-4CF3-89F8-2710F94D4BE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication", "src\ChatApplication\ChatApplication.csproj", "{341E2060-8DC6-4CF3-89F8-2710F94D4BE1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.Authentication", "src\ChatApplication.Authentication\ChatApplication.Authentication.csproj", "{31F1C373-83B1-43F8-A8C2-A5056DA1F270}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.Authentication", "src\ChatApplication.Authentication\ChatApplication.Authentication.csproj", "{31F1C373-83B1-43F8-A8C2-A5056DA1F270}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.BusinessLayer", "src\ChatApplication.BusinessLayer\ChatApplication.BusinessLayer.csproj", "{8DB3ABFF-A60D-412C-9411-98B133AAFC54}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.BusinessLayer", "src\ChatApplication.BusinessLayer\ChatApplication.BusinessLayer.csproj", "{8DB3ABFF-A60D-412C-9411-98B133AAFC54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.DataAccessLayer", "src\ChatApplication.DataAccessLayer\ChatApplication.DataAccessLayer.csproj", "{122DA60F-50D9-4B76-A392-879516BEA580}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.DataAccessLayer", "src\ChatApplication.DataAccessLayer\ChatApplication.DataAccessLayer.csproj", "{122DA60F-50D9-4B76-A392-879516BEA580}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.Shared", "src\ChatApplication.Shared\ChatApplication.Shared.csproj", "{FC644506-59EC-4B5E-A35F-441A824FDDAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.Shared", "src\ChatApplication.Shared\ChatApplication.Shared.csproj", "{FC644506-59EC-4B5E-A35F-441A824FDDAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.StorageProviders", "src\ChatApplication.StorageProviders\ChatApplication.StorageProviders.csproj", "{05786042-3CD6-4963-A821-0446BF2E3720}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.StorageProviders", "src\ChatApplication.StorageProviders\ChatApplication.StorageProviders.csproj", "{05786042-3CD6-4963-A821-0446BF2E3720}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.Core", "src\ChatApplication.Core\ChatApplication.Core.csproj", "{2A1787CA-F6D1-40B1-A085-4D4A34B67CBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.Core", "src\ChatApplication.Core\ChatApplication.Core.csproj", "{2A1787CA-F6D1-40B1-A085-4D4A34B67CBB}"
 EndProject
 Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "ChatApplication.Database", "src\ChatApplication.Database\ChatApplication.Database.sqlproj", "{92EFA290-C93E-4DD3-9364-E444EEAF0EBF}"
 EndProject
