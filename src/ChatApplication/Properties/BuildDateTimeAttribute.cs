@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 
-namespace ChatApplication.Properties;
+namespace System.Reflection;
 
 [AttributeUsage(AttributeTargets.Assembly)]
 public class BuildDateTimeAttribute : Attribute
