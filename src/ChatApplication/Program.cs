@@ -2,6 +2,7 @@ using System.Diagnostics;
 using ChatApplication.BusinessLayer.Settings;
 using ChatApplication.ExceptionHandlers;
 using ChatApplication.Extensions;
+using ChatApplication.StorageProviders.Extensions;
 using ChatApplication.Swagger;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
@@ -60,6 +61,23 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 
     services.AddControllers();
     services.AddRazorPages();
+
+    if (environment.IsDevelopment())
+    {
+        services.AddFileSystemStorage(options =>
+        {
+            options.SiteRootFolder = environment.ContentRootPath;
+            options.StorageFolder = appSettings.StorageFolder;
+        });
+    }
+    else
+    {
+        services.AddAzureStorage(options =>
+        {
+            options.ConnectionString = configuration.GetConnectionString("AzureStorageConnection");
+            options.ContainerName = appSettings.ContainerName;
+        });
+    }
 }
 
 void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServiceProvider services)
