@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using OperationResults;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace ChatApplication.BusinessLayer.Services;
 
@@ -78,7 +77,7 @@ public class IdentityService : IIdentityService
     public async Task<Result> LogoutAsync()
     {
         await signInManager.SignOutAsync();
-        await signInManager.Context.SignOutAsync(JwtBearerDefaults.AuthenticationScheme);
+        await signInManager.Context.SignOutAsync("JwtBearerHandler");
 
         return Result.Ok();
     }

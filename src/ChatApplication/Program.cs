@@ -148,6 +148,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
         options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
+    .AddCookie("JwtBearerHandler")
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -236,7 +237,7 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
 
     if (swaggerSettings.Enabled)
     {
-        app.UseMiddleware<SwaggerAuthenticationMiddleware>();
+        //app.UseMiddleware<SwaggerAuthenticationMiddleware>();
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {
