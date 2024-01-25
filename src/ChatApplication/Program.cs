@@ -12,6 +12,7 @@ using ChatApplication.BusinessLayer.Services.Interfaces;
 using ChatApplication.BusinessLayer.Settings;
 using ChatApplication.BusinessLayer.StartupServices;
 using ChatApplication.BusinessLayer.Validations;
+using ChatApplication.DataAccessLayer;
 using ChatApplication.ExceptionHandlers;
 using ChatApplication.Extensions;
 using ChatApplication.StorageProviders.Extensions;
@@ -126,8 +127,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddControllers();
     services.AddRazorPages();
 
+    services.AddSqlServer<ApplicationDbContext>(configuration.GetConnectionString("SqlConnection"));
     services.AddSqlServer<AuthenticationDbContext>(configuration.GetConnectionString("SqlConnection"));
 
+    services.AddScoped<IApplicationDbContext>(services => services.GetRequiredService<ApplicationDbContext>());
     services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     {
         options.User.RequireUniqueEmail = true;
