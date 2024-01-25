@@ -28,6 +28,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using OperationResults.AspNetCore;
+using Serilog;
 using TinyHelpers.AspNetCore.Extensions;
 using TinyHelpers.AspNetCore.Swagger;
 
@@ -44,6 +45,11 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     var appSettings = services.ConfigureAndGet<AppSettings>(configuration, nameof(AppSettings));
     var jwtSettings = services.ConfigureAndGet<JwtSettings>(configuration, nameof(JwtSettings));
     var swaggerSettings = services.ConfigureAndGet<SwaggerSettings>(configuration, nameof(SwaggerSettings));
+
+    host.UseSerilog((hostingContext, loggerConfiguration) =>
+    {
+        loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration);
+    });
 
     services.AddHttpContextAccessor();
     services.AddMemoryCache();
@@ -235,6 +241,11 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
             options.InjectStylesheet("/css/swagger.css");
         });
     }
+
+    app.UseSerilogRequestLogging(options =>
+    {
+        options.IncludeQueryInRequestPath = true;
+    });
 
     app.UseEndpoints(endpoints =>
     {
