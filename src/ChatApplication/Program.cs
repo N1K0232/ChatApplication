@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Reflection;
 using System.Text;
 using ChatApplication;
 using ChatApplication.Authentication;
@@ -27,6 +28,7 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
+using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using OperationResults.AspNetCore;
 using Serilog;
@@ -74,6 +76,11 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddAutoMapper(typeof(UserMapperProfile).Assembly);
     services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
 
+    services.AddFluentValidationAutoValidation(options =>
+    {
+        options.DisableDataAnnotationsValidation = true;
+    });
+
     services.AddOperationResult(options =>
     {
         options.ErrorResponseFormat = ErrorResponseFormat.List;
@@ -82,6 +89,7 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     if (swaggerSettings.Enabled)
     {
         services.AddEndpointsApiExplorer();
+
         services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc("v1", new OpenApiInfo { Title = "ChatApplication API", Version = "v1" });
@@ -112,17 +120,32 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             options.AddDefaultResponse();
 
             options.OperationFilter<AuthResponseOperationFilter>();
+
+            options.MapType<DateTime>(() => new OpenApiSchema
+            {
+                Type = "string",
+                Format = "date-time",
+                Example = new OpenApiString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))
+            });
+
+            options.MapType<DateOnly>(() => new OpenApiSchema
+            {
+                Type = "string",
+                Format = "date",
+                Example = new OpenApiString(DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd"))
+            });
+
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+
+            options.UseAllOfToExtendReferenceSchemas();
+            options.IncludeXmlComments(xmlPath);
         })
         .AddFluentValidationRulesToSwagger(options =>
         {
             options.SetNotNullableIfMinLengthGreaterThenZero = true;
         });
     }
-
-    services.AddFluentValidationAutoValidation(options =>
-    {
-        options.DisableDataAnnotationsValidation = true;
-    });
 
     services.AddControllers();
     services.AddRazorPages();
@@ -237,7 +260,8 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
 
     if (swaggerSettings.Enabled)
     {
-        //app.UseMiddleware<SwaggerAuthenticationMiddleware>();
+        app.UseMiddleware<SwaggerAuthenticationMiddleware>();
+
         app.UseSwagger();
         app.UseSwaggerUI(options =>
         {
