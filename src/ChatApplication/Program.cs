@@ -216,11 +216,11 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
     {
         if (!environment.IsDevelopment())
         {
-            builder.UseExceptionHandler("/errors/500");
+            builder.UseExceptionHandler("/Errors/500");
             builder.UseHsts();
         }
 
-        builder.UseStatusCodePagesWithReExecute("/errors/{0}");
+        builder.UseStatusCodePagesWithReExecute("/Errors/{0}");
     });
 
     app.UseWhen(context => context.IsApiRequest(), builder =>
