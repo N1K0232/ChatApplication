@@ -3,8 +3,15 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
     <SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
     <Company>N1K0232</Company>
+    <Authors>N1K0232</Authors>
+    <ProductName>ChatApplication</ProductName>
+    <Title>ChatApplication</Title>
+    <Description>A C# web application to chat with your friends</Description>
+    <RepositoryUrl>https://github.com/N1K0232/ChatApplication.git</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
