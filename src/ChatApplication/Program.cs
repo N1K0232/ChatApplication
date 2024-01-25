@@ -1,11 +1,31 @@
 using System.Diagnostics;
+using System.Text;
+using ChatApplication;
+using ChatApplication.Authentication;
+using ChatApplication.Authentication.Entities;
+using ChatApplication.Authentication.Handlers;
+using ChatApplication.Authentication.Requirements;
+using ChatApplication.BusinessLayer.Contracts;
+using ChatApplication.BusinessLayer.MapperProfiles;
+using ChatApplication.BusinessLayer.Services;
+using ChatApplication.BusinessLayer.Services.Interfaces;
 using ChatApplication.BusinessLayer.Settings;
+using ChatApplication.BusinessLayer.StartupServices;
+using ChatApplication.BusinessLayer.Validations;
 using ChatApplication.ExceptionHandlers;
 using ChatApplication.Extensions;
 using ChatApplication.StorageProviders.Extensions;
 using ChatApplication.Swagger;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using MicroElements.Swashbuckle.FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using OperationResults.AspNetCore;
 using TinyHelpers.AspNetCore.Extensions;
@@ -22,6 +42,7 @@ await app.RunAsync();
 void ConfigureServices(IServiceCollection services, IConfiguration configuration, IWebHostEnvironment environment, IHostBuilder host)
 {
     var appSettings = services.ConfigureAndGet<AppSettings>(configuration, nameof(AppSettings));
+    var jwtSettings = services.ConfigureAndGet<JwtSettings>(configuration, nameof(JwtSettings));
     var swaggerSettings = services.ConfigureAndGet<SwaggerSettings>(configuration, nameof(SwaggerSettings));
 
     services.AddHttpContextAccessor();
@@ -43,6 +64,9 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     services.AddWebOptimizer(minifyCss: true, minifyJavaScript: environment.IsProduction());
     services.AddRequestLocalization(appSettings.SupportedCultures);
 
+    services.AddAutoMapper(typeof(UserMapperProfile).Assembly);
+    services.AddValidatorsFromAssemblyContaining<LoginRequestValidator>();
+
     services.AddOperationResult(options =>
     {
         options.ErrorResponseFormat = ErrorResponseFormat.List;
@@ -54,13 +78,93 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc("v1", new OpenApiInfo { Title = "ChatApplication API", Version = "v1" });
+            options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
+            {
+                In = ParameterLocation.Header,
+                Description = "Insert JWT token with the \"Bearer \" prefix",
+                Name = HeaderNames.Authorization,
+                Type = SecuritySchemeType.ApiKey
+            });
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = JwtBearerDefaults.AuthenticationScheme
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+
             options.AddAcceptLanguageHeader();
             options.AddDefaultResponse();
+
+            options.OperationFilter<AuthResponseOperationFilter>();
+        })
+        .AddFluentValidationRulesToSwagger(options =>
+        {
+            options.SetNotNullableIfMinLengthGreaterThenZero = true;
         });
     }
 
+    services.AddFluentValidationAutoValidation(options =>
+    {
+        options.DisableDataAnnotationsValidation = true;
+    });
+
     services.AddControllers();
     services.AddRazorPages();
+
+    services.AddSqlServer<AuthenticationDbContext>(configuration.GetConnectionString("SqlConnection"));
+
+    services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+    {
+        options.User.RequireUniqueEmail = true;
+        options.Password.RequiredLength = 8;
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+    })
+    .AddDefaultTokenProviders()
+    .AddEntityFrameworkStores<AuthenticationDbContext>();
+
+    services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    })
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecurityKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
+    services.AddAuthorization(options =>
+    {
+        var policyBuilder = new AuthorizationPolicyBuilder().RequireAuthenticatedUser();
+        policyBuilder.Requirements.Add(new UserActiveRequirement());
+
+        options.DefaultPolicy = policyBuilder.Build();
+    });
+
+    services.AddScoped<IAuthorizationHandler, UserActiveHandler>();
+    services.AddScoped<IUserService, HttpUserService>();
 
     if (environment.IsDevelopment())
     {
@@ -78,6 +182,11 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
             options.ContainerName = appSettings.ContainerName;
         });
     }
+
+    services.AddScoped<IIdentityService, IdentityService>();
+    services.AddScoped<IAuthenticatedService, AuthenticatedService>();
+
+    services.AddHostedService<IdentityStartupService>();
 }
 
 void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServiceProvider services)
@@ -89,6 +198,9 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
 
     app.UseHttpsRedirection();
     app.UseRequestLocalization();
+
+    app.UseRouting();
+    app.UseWebOptimizer();
 
     app.UseWhen(context => context.IsWebRequest(), builder =>
     {
@@ -105,6 +217,9 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
     {
         builder.UseExceptionHandler();
         builder.UseStatusCodePages();
+
+        builder.UseAuthentication();
+        builder.UseAuthorization();
     });
 
     app.UseDefaultFiles();
@@ -120,12 +235,6 @@ void Configure(IApplicationBuilder app, IWebHostEnvironment environment, IServic
             options.InjectStylesheet("/css/swagger.css");
         });
     }
-
-    app.UseRouting();
-    app.UseWebOptimizer();
-
-    app.UseAuthentication();
-    app.UseAuthorization();
 
     app.UseEndpoints(endpoints =>
     {
