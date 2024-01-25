@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ChatApplication.BusinessLayer\ChatApplication.BusinessLayer.csproj" />
+    <ProjectReference Include="..\ChatApplication.Logging\ChatApplication.Logging.csproj" />
   </ItemGroup>
 
   <ItemGroup>
