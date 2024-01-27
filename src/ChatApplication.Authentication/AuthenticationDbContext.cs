@@ -19,23 +19,25 @@ public class AuthenticationDbContext
 
         modelBuilder.Entity<ApplicationUser>(builder =>
         {
-            builder.Property(u => u.FirstName).HasMaxLength(256).IsRequired();
-            builder.Property(u => u.LastName).HasMaxLength(256).IsRequired(false);
-            builder.Property(u => u.ProfileImagePath).HasMaxLength(512).IsRequired(false);
+            builder.Property(user => user.FirstName).HasMaxLength(256).IsRequired();
+            builder.Property(user => user.LastName).HasMaxLength(256).IsRequired(false);
+
+            builder.Property(user => user.ProfileImagePath).HasMaxLength(512).IsRequired(false);
+            builder.Property(user => user.RefreshToken).HasMaxLength(512).IsRequired(false);
         });
 
         modelBuilder.Entity<ApplicationUserRole>(builder =>
         {
-            builder.HasKey(ur => new { ur.UserId, ur.RoleId });
+            builder.HasKey(userRole => new { userRole.UserId, userRole.RoleId });
 
-            builder.HasOne(ur => ur.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.UserId)
+            builder.HasOne(userRole => userRole.User)
+                .WithMany(user => user.UserRoles)
+                .HasForeignKey(userRole => userRole.UserId)
                 .IsRequired();
 
-            builder.HasOne(ur => ur.Role)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.RoleId)
+            builder.HasOne(userRole => userRole.Role)
+                .WithMany(role => role.UserRoles)
+                .HasForeignKey(userRole => userRole.RoleId)
                 .IsRequired();
         });
     }

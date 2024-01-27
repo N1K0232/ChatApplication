@@ -10,5 +10,9 @@ public class ApplicationUser : IdentityUser<Guid>
 
     public string ProfileImagePath { get; set; }
 
+    public string RefreshToken { get; set; }
+
+    public DateTime? RefreshTokenExpirationDate { get; set; }
+
     public virtual ICollection<ApplicationUserRole> UserRoles { get; set; }
 }

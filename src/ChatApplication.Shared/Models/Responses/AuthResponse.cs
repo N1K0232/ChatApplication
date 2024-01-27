@@ -1,3 +1,3 @@
 ﻿namespace ChatApplication.Shared.Models.Responses;
 
-public record class AuthResponse(string AccessToken);
+public record class AuthResponse(string AccessToken, string RefreshToken);

@@ -8,6 +8,8 @@ public interface IIdentityService
 {
     Task<Result<AuthResponse>> LoginAsync(LoginRequest request);
 
+    Task<Result<AuthResponse>> RefreshTokenAsync(RefreshTokenRequest request);
+
     Task<Result> RegisterAsync(RegisterRequest request);
 
     Task<Result> LogoutAsync();

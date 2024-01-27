@@ -1,5 +1,6 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using ChatApplication.Authentication;
 using ChatApplication.Authentication.Entities;
@@ -52,7 +53,30 @@ public class IdentityService : IIdentityService
             new Claim(ClaimTypes.SerialNumber, user.SecurityStamp ?? string.Empty)
         }.Union(userRoles.Select(role => new Claim(ClaimTypes.Role, role)));
 
-        return CreateToken(claims);
+        var response = CreateToken(claims);
+        await SaveRefreshTokenAsync(user, response.RefreshToken);
+
+        return response;
+    }
+
+    public async Task<Result<AuthResponse>> RefreshTokenAsync(RefreshTokenRequest request)
+    {
+        var user = await ValidateAccessTokenAsync(request.AccessToken);
+        if (user is not null)
+        {
+            var dbUser = await userManager.FindByIdAsync(user.GetClaimValue(ClaimTypes.NameIdentifier));
+            if (dbUser?.RefreshToken is null || dbUser.RefreshTokenExpirationDate < DateTime.UtcNow || dbUser.RefreshToken != request.RefreshToken)
+            {
+                return Result.Fail(FailureReasons.ClientError, "Invalid refresh token");
+            }
+
+            var response = CreateToken(user.Claims);
+            await SaveRefreshTokenAsync(dbUser, response.RefreshToken);
+
+            return response;
+        }
+
+        return Result.Fail(FailureReasons.ClientError, "Invalid access token signature", "Couldn't verify the access token");
     }
 
     public async Task<Result> RegisterAsync(RegisterRequest request)
@@ -76,6 +100,13 @@ public class IdentityService : IIdentityService
 
     public async Task<Result> LogoutAsync()
     {
+        var user = signInManager.Context.User;
+        var dbUser = await userManager.FindByIdAsync(user.GetClaimValue(ClaimTypes.NameIdentifier));
+
+        dbUser.RefreshToken = null;
+        dbUser.RefreshTokenExpirationDate = null;
+
+        await userManager.UpdateAsync(dbUser);
         await signInManager.SignOutAsync();
         await signInManager.Context.SignOutAsync("JwtBearerHandler");
 
@@ -94,13 +125,61 @@ public class IdentityService : IIdentityService
             jwtSettings.Audience,
             claims,
             DateTime.UtcNow,
-            DateTime.UtcNow.AddMinutes(jwtSettings.ExpirationMinutes),
+            DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes),
             signingCredentials
         );
 
-        var jwtSecurityTokenHandler = new JwtSecurityTokenHandler();
-        var accessToken = jwtSecurityTokenHandler.WriteToken(jwtSecurityToken);
+        var accessToken = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+        var refreshToken = GenerateRefreshToken();
 
-        return new AuthResponse(accessToken);
+        return new AuthResponse(accessToken, refreshToken);
+
+        static string GenerateRefreshToken()
+        {
+            using var generator = RandomNumberGenerator.Create();
+            var randomNumber = new byte[256];
+
+            generator.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+    }
+
+    private async Task SaveRefreshTokenAsync(ApplicationUser user, string refreshToken)
+    {
+        user.RefreshToken = refreshToken;
+        user.RefreshTokenExpirationDate = DateTime.UtcNow.AddMinutes(jwtSettings.RefreshTokenExpirationMinutes);
+
+        await userManager.UpdateAsync(user);
+    }
+
+    private Task<ClaimsPrincipal> ValidateAccessTokenAsync(string accessToken)
+    {
+        var handler = new JwtSecurityTokenHandler();
+        var parameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecurityKey)),
+            ValidateIssuer = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidateAudience = true,
+            ValidAudience = jwtSettings.Audience,
+            ValidateLifetime = false,
+            RequireExpirationTime = true,
+            ClockSkew = TimeSpan.Zero
+        };
+
+        try
+        {
+            var user = handler.ValidateToken(accessToken, parameters, out var securityToken);
+            if (securityToken is JwtSecurityToken jwtSecurityToken && jwtSecurityToken.Header.Alg == SecurityAlgorithms.HmacSha256)
+            {
+                return Task.FromResult(user);
+            }
+        }
+        catch
+        {
+        }
+
+        return Task.FromResult<ClaimsPrincipal>(null);
     }
 }
