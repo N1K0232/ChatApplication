@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using ChatApplication;
@@ -8,6 +9,7 @@ using ChatApplication.Authentication.Handlers;
 using ChatApplication.Authentication.Requirements;
 using ChatApplication.BusinessLayer.Contracts;
 using ChatApplication.BusinessLayer.Extensions;
+using ChatApplication.BusinessLayer.Handlers;
 using ChatApplication.BusinessLayer.MapperProfiles;
 using ChatApplication.BusinessLayer.Services;
 using ChatApplication.BusinessLayer.Settings;
@@ -31,6 +33,9 @@ using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Models;
 using OperationResults.AspNetCore;
+using Polly;
+using Polly.Retry;
+using Polly.Timeout;
 using Serilog;
 using TinyHelpers.AspNetCore.Extensions;
 using TinyHelpers.AspNetCore.Swagger;
@@ -150,6 +155,51 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     }
 
     services.AddFluentEmail(sendinblueSettings.FromEmailAddress).AddSendinblueSender();
+
+    services.AddResiliencePipeline("timeout", (builder, context) =>
+    {
+        builder.AddTimeout(new TimeoutStrategyOptions
+        {
+            Timeout = TimeSpan.FromSeconds(2),
+            OnTimeout = args =>
+            {
+                var logger = context.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("Timeout occurred after: {TotalSeconds} seconds", args.Timeout.TotalSeconds);
+
+                return default;
+            }
+        });
+    });
+
+    services.AddResiliencePipeline<string, HttpResponseMessage>("http", (builder, context) =>
+    {
+        builder.AddRetry(new RetryStrategyOptions<HttpResponseMessage>
+        {
+            MaxRetryAttempts = 3,
+            ShouldHandle = new PredicateBuilder<HttpResponseMessage>()
+            .Handle<HttpRequestException>()
+            .HandleResult(r => r.StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests or >= HttpStatusCode.InternalServerError),
+            DelayGenerator = args =>
+            {
+                if (args.Outcome.Result is not null && args.Outcome.Result.Headers.TryGetValues(HeaderNames.RetryAfter, out var value))
+                {
+                    return new ValueTask<TimeSpan?>(TimeSpan.FromSeconds(int.Parse(value.First())));
+                }
+
+                return new ValueTask<TimeSpan?>(TimeSpan.FromSeconds(Math.Pow(2, args.AttemptNumber + 1)));
+            },
+            OnRetry = args =>
+            {
+                var logger = context.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogInformation("Retrying... {AttemptNumber} attempt after {RetryDelay}", args.AttemptNumber + 1, args.RetryDelay);
+
+                return default;
+            }
+        });
+    });
+
+    services.AddTransient<TransientErrorDelegatingHandler>();
+    services.AddHttpClient("http").AddHttpMessageHandler<TransientErrorDelegatingHandler>();
 
     services.AddControllers();
     services.AddRazorPages();
