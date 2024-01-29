@@ -2,13 +2,14 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using ChatApplication.Authentication;
 using ChatApplication.Authentication.Entities;
 using ChatApplication.Authentication.Extensions;
+using ChatApplication.BusinessLayer.Extensions;
 using ChatApplication.BusinessLayer.Services.Interfaces;
 using ChatApplication.BusinessLayer.Settings;
 using ChatApplication.Shared.Models.Requests;
 using ChatApplication.Shared.Models.Responses;
+using FluentEmail.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
@@ -21,13 +22,17 @@ public class IdentityService : IIdentityService
 {
     private readonly UserManager<ApplicationUser> userManager;
     private readonly SignInManager<ApplicationUser> signInManager;
+
+    private readonly IFluentEmail fluentEmail;
     private readonly JwtSettings jwtSettings;
 
     public IdentityService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager,
-        IOptions<JwtSettings> jwtSettingsOptions)
+        IFluentEmail fluentEmail, IOptions<JwtSettings> jwtSettingsOptions)
     {
         this.userManager = userManager;
         this.signInManager = signInManager;
+        this.fluentEmail = fluentEmail;
+
         jwtSettings = jwtSettingsOptions.Value;
     }
 
@@ -90,12 +95,15 @@ public class IdentityService : IIdentityService
         };
 
         var result = await userManager.CreateAsync(user, request.Password);
-        if (result.Succeeded)
-        {
-            result = await userManager.AddToRoleAsync(user, RoleNames.User);
-        }
+        var token = await userManager.GenerateEmailConfirmationTokenAsync(user);
 
-        return result.Succeeded ? Result.Ok() : Result.Fail(FailureReasons.ClientError, "Registration failed", result.GetErrors());
+        var response = await fluentEmail.To(user.Email)
+            .Subject("Verify your email address")
+            .Body($"Your email verification token:{Environment.NewLine}{token}").SendAsync();
+
+        return result.Succeeded && response.Successful ?
+            Result.Ok() :
+            Result.Fail(FailureReasons.ClientError, "Registration failed", result.GetErrors() + response.GetErrors());
     }
 
     public async Task<Result> LogoutAsync()

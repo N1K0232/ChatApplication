@@ -26,6 +26,16 @@ public class AuthController : ControllerBase
         return HttpContext.CreateResponse(result);
     }
 
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(AuthResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    {
+        var result = await identityService.RefreshTokenAsync(request);
+        return HttpContext.CreateResponse(result);
+    }
+
     [HttpPost("register")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]

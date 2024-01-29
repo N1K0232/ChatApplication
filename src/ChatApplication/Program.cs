@@ -7,9 +7,9 @@ using ChatApplication.Authentication.Entities;
 using ChatApplication.Authentication.Handlers;
 using ChatApplication.Authentication.Requirements;
 using ChatApplication.BusinessLayer.Contracts;
+using ChatApplication.BusinessLayer.Extensions;
 using ChatApplication.BusinessLayer.MapperProfiles;
 using ChatApplication.BusinessLayer.Services;
-using ChatApplication.BusinessLayer.Services.Interfaces;
 using ChatApplication.BusinessLayer.Settings;
 using ChatApplication.BusinessLayer.StartupServices;
 using ChatApplication.BusinessLayer.Validations;
@@ -47,6 +47,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
 {
     var appSettings = services.ConfigureAndGet<AppSettings>(configuration, nameof(AppSettings));
     var jwtSettings = services.ConfigureAndGet<JwtSettings>(configuration, nameof(JwtSettings));
+
+    var sendinblueSettings = services.ConfigureAndGet<SendinblueSettings>(configuration, nameof(SendinblueSettings));
     var swaggerSettings = services.ConfigureAndGet<SwaggerSettings>(configuration, nameof(SwaggerSettings));
 
     host.UseSerilog((hostingContext, loggerConfiguration) =>
@@ -147,6 +149,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         });
     }
 
+    services.AddFluentEmail(sendinblueSettings.FromEmailAddress).AddSendinblueSender();
+
     services.AddControllers();
     services.AddRazorPages();
 
@@ -216,8 +220,10 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
         });
     }
 
-    services.AddScoped<IIdentityService, IdentityService>();
-    services.AddScoped<IAuthenticatedService, AuthenticatedService>();
+    services.Scan(scan => scan.FromAssemblyOf<IdentityService>()
+        .AddClasses(classes => classes.InNamespaceOf<IdentityService>())
+        .AsImplementedInterfaces()
+        .WithScopedLifetime());
 
     services.AddHostedService<IdentityStartupService>();
 }
