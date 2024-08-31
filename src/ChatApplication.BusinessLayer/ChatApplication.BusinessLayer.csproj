@@ -9,4 +9,10 @@
     <PackageReference Include="TinyHelpers" Version="3.1.11" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ChatApplication.DataAccessLayer\ChatApplication.DataAccessLayer.csproj" />
+    <ProjectReference Include="..\ChatApplication.Shared\ChatApplication.Shared.csproj" />
+    <ProjectReference Include="..\ChatApplication.StorageProviders\ChatApplication.StorageProviders.csproj" />
+  </ItemGroup>
+
 </Project>
