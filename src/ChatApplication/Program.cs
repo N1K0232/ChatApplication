@@ -1,7 +1,10 @@
 using System.Text.Json.Serialization;
 using ChatApplication.BusinessLayer.Settings;
+using ChatApplication.DataAccessLayer;
+using ChatApplication.DataAccessLayer.Caching;
 using ChatApplication.Extensions;
 using ChatApplication.Swagger;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using TinyHelpers.AspNetCore.Extensions;
 using TinyHelpers.AspNetCore.Swagger;
@@ -38,6 +41,25 @@ if (swaggerSettings.Enabled)
         options.AddDefaultResponse();
     });
 }
+
+var connectionString = builder.Configuration.GetConnectionString("SqlConnection");
+builder.Services.AddDbContext<IDataContext, DataContext>(options =>
+{
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.CommandTimeout(120);
+        sqlOptions.EnableRetryOnFailure(10, TimeSpan.FromSeconds(2), null);
+    });
+});
+
+builder.Services.AddSingleton<ISqlServerCache, SqlServerCache>();
+builder.Services.AddDistributedSqlServerCache(options =>
+{
+    options.ConnectionString = connectionString;
+    options.SchemaName = "dbo";
+    options.TableName = "CacheStore";
+    options.DefaultSlidingExpiration = TimeSpan.FromHours(1);
+});
 
 var app = builder.Build();
 app.Environment.ApplicationName = appSettings.ApplicationName;
