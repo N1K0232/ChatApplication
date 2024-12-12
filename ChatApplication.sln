@@ -12,13 +12,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication", "src\Chat
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.BusinessLayer", "src\ChatApplication.BusinessLayer\ChatApplication.BusinessLayer.csproj", "{070D389E-9104-4880-9445-090A73472666}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.DataAccessLayer", "src\ChatApplication.DataAccessLayer\ChatApplication.DataAccessLayer.csproj", "{8320A864-EF3B-4FAA-AE0D-A5FA76AB9D40}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.DataAccessLayer", "src\ChatApplication.DataAccessLayer\ChatApplication.DataAccessLayer.csproj", "{8320A864-EF3B-4FAA-AE0D-A5FA76AB9D40}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.StorageProviders", "src\ChatApplication.StorageProviders\ChatApplication.StorageProviders.csproj", "{FF8A9505-B0AE-429B-86F6-45CA543CDA42}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.StorageProviders", "src\ChatApplication.StorageProviders\ChatApplication.StorageProviders.csproj", "{FF8A9505-B0AE-429B-86F6-45CA543CDA42}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.Shared", "src\ChatApplication.Shared\ChatApplication.Shared.csproj", "{83F69B71-BC76-4A1E-8CB1-11B9FB6D6AAD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatApplication.Shared", "src\ChatApplication.Shared\ChatApplication.Shared.csproj", "{83F69B71-BC76-4A1E-8CB1-11B9FB6D6AAD}"
 EndProject
 Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "ChatApplication.Database", "src\ChatApplication.Database\ChatApplication.Database.sqlproj", "{60B25751-3FF8-441B-804E-20D0934D963B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatApplication.Authentication", "src\ChatApplication.Authentication\ChatApplication.Authentication.csproj", "{0C2096B3-BD32-4EE6-B6D7-693CA9C0C719}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +54,10 @@ Global
 		{60B25751-3FF8-441B-804E-20D0934D963B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{60B25751-3FF8-441B-804E-20D0934D963B}.Release|Any CPU.Build.0 = Release|Any CPU
 		{60B25751-3FF8-441B-804E-20D0934D963B}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{0C2096B3-BD32-4EE6-B6D7-693CA9C0C719}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0C2096B3-BD32-4EE6-B6D7-693CA9C0C719}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0C2096B3-BD32-4EE6-B6D7-693CA9C0C719}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0C2096B3-BD32-4EE6-B6D7-693CA9C0C719}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
